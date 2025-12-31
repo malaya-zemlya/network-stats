@@ -260,6 +260,26 @@ function collectGPUInfo() {
     }
 }
 
+// Collect Memory Information
+function collectMemoryInfo() {
+    const memoryInfo = {
+        deviceMemory: navigator.deviceMemory || null,
+        hardwareConcurrency: navigator.hardwareConcurrency || null,
+        jsHeap: null
+    };
+
+    // performance.memory is Chrome-specific
+    if (performance.memory) {
+        memoryInfo.jsHeap = {
+            usedJSHeapSize: performance.memory.usedJSHeapSize,
+            totalJSHeapSize: performance.memory.totalJSHeapSize,
+            jsHeapSizeLimit: performance.memory.jsHeapSizeLimit
+        };
+    }
+
+    return memoryInfo;
+}
+
 // Collect Navigation Timing
 function collectNavigationTiming() {
     const timing = performance.timing;
@@ -331,17 +351,11 @@ async function collectAllDiagnostics() {
         locale: collectLocaleInfo(),
         timezone: collectTimezoneInfo(),
         gpu: collectGPUInfo(),
+        memory: collectMemoryInfo(),
         highEntropy: highEntropyData,
         network: collectNetworkInfo(),
         navigation: collectNavigationTiming(),
         resources: collectResourceTiming(),
-        performance: {
-            memory: performance.memory ? {
-                usedJSHeapSize: performance.memory.usedJSHeapSize,
-                totalJSHeapSize: performance.memory.totalJSHeapSize,
-                jsHeapSizeLimit: performance.memory.jsHeapSizeLimit
-            } : null
-        },
         url: window.location.href
     };
 
@@ -365,6 +379,21 @@ function displayDashboard(data) {
     document.getElementById('gpuVendor').textContent = data.gpu.vendor;
     document.getElementById('gpuRenderer').textContent = data.gpu.renderer;
     document.getElementById('webglVersion').textContent = data.gpu.webglVersion;
+
+    // Memory Info
+    document.getElementById('deviceMemory').textContent = data.memory.deviceMemory 
+        ? `${data.memory.deviceMemory} GB` 
+        : 'Not available';
+    document.getElementById('cpuCores').textContent = data.memory.hardwareConcurrency || 'Not available';
+    if (data.memory.jsHeap) {
+        document.getElementById('jsHeapUsed').textContent = formatBytes(data.memory.jsHeap.usedJSHeapSize);
+        document.getElementById('jsHeapTotal').textContent = formatBytes(data.memory.jsHeap.totalJSHeapSize);
+        document.getElementById('jsHeapLimit').textContent = formatBytes(data.memory.jsHeap.jsHeapSizeLimit);
+    } else {
+        document.getElementById('jsHeapUsed').textContent = 'Not available';
+        document.getElementById('jsHeapTotal').textContent = 'Not available';
+        document.getElementById('jsHeapLimit').textContent = 'Not available';
+    }
 
     // User-Agent Client Hints
     if (data.highEntropy.available) {
