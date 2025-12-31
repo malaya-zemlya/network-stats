@@ -117,6 +117,50 @@ function collectBrowserInfo() {
     };
 }
 
+// Collect High Entropy User-Agent Data
+async function collectHighEntropyData() {
+    try {
+        if (!navigator.userAgentData || typeof navigator.userAgentData.getHighEntropyValues !== 'function') {
+            return {
+                available: false,
+                reason: 'User-Agent Client Hints API not supported'
+            };
+        }
+
+        const highEntropyValues = await navigator.userAgentData.getHighEntropyValues([
+            'architecture',
+            'bitness',
+            'brands',
+            'fullVersionList',
+            'model',
+            'platform',
+            'platformVersion',
+            'uaFullVersion',
+            'wow64'
+        ]);
+
+        return {
+            available: true,
+            architecture: highEntropyValues.architecture || 'unknown',
+            bitness: highEntropyValues.bitness || 'unknown',
+            brands: highEntropyValues.brands || [],
+            fullVersionList: highEntropyValues.fullVersionList || [],
+            mobile: navigator.userAgentData.mobile || false,
+            model: highEntropyValues.model || 'unknown',
+            platform: highEntropyValues.platform || 'unknown',
+            platformVersion: highEntropyValues.platformVersion || 'unknown',
+            uaFullVersion: highEntropyValues.uaFullVersion || 'unknown',
+            wow64: highEntropyValues.wow64 || false
+        };
+    } catch (e) {
+        console.warn('Unable to get high entropy data:', e);
+        return {
+            available: false,
+            reason: `Error: ${e.message}`
+        };
+    }
+}
+
 // Collect Network Connection Information
 function collectNetworkInfo() {
     const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
@@ -242,12 +286,16 @@ async function collectAllDiagnostics() {
     // Wait a bit more to ensure timing data is available
     await new Promise(resolve => setTimeout(resolve, 200));
 
+    // Collect high entropy data (async)
+    const highEntropyData = await collectHighEntropyData();
+
     diagnosticsData = {
         timestamp: new Date().toISOString(),
         browser: collectBrowserInfo(),
         locale: collectLocaleInfo(),
         timezone: collectTimezoneInfo(),
         gpu: collectGPUInfo(),
+        highEntropy: highEntropyData,
         network: collectNetworkInfo(),
         navigation: collectNavigationTiming(),
         resources: collectResourceTiming(),
@@ -281,6 +329,19 @@ function displayDashboard(data) {
     document.getElementById('gpuVendor').textContent = data.gpu.vendor;
     document.getElementById('gpuRenderer').textContent = data.gpu.renderer;
     document.getElementById('webglVersion').textContent = data.gpu.webglVersion;
+
+    // User-Agent Client Hints
+    if (data.highEntropy.available) {
+        document.getElementById('uaPlatform').textContent = `${data.highEntropy.platform} ${data.highEntropy.platformVersion}`;
+        document.getElementById('uaArchitecture').textContent = data.highEntropy.architecture;
+        document.getElementById('uaBitness').textContent = `${data.highEntropy.bitness}-bit`;
+        document.getElementById('uaModel').textContent = data.highEntropy.model || 'N/A';
+    } else {
+        document.getElementById('uaPlatform').textContent = 'Not available';
+        document.getElementById('uaArchitecture').textContent = 'Not available';
+        document.getElementById('uaBitness').textContent = 'Not available';
+        document.getElementById('uaModel').textContent = 'Not available';
+    }
 
     // Network Info
     document.getElementById('connectionType').textContent = data.network.type;
