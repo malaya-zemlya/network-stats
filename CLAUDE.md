@@ -6,7 +6,10 @@ help the networking team to debug any customer issues.
 
 Javascript running in the browser collects necessary data from the browser
 and posts it to the server via an API call. 
-The server returns a unique id to the browser UI. The custome can refer to this unique id when talking to the customer support.
+The server returns a unique id to the browser UI. 
+Customers can refer to this unique id when talking to the customer support.
+collected data to the server.
+
 
 ##Project Structure
 
@@ -109,6 +112,9 @@ app.get('/api/resource', (req, res) => {
 # Install dependencies
 npm install
 
+# Make sure to stop the existing server listening on port 3000 before running a new server 
+lsof -ti:3000 | xargs kill -9 2>/dev/null && echo "Server stopped"
+
 # Start development server (auto-reload)
 npm run dev
 
@@ -129,3 +135,5 @@ npx eslint .
 6. Test API endpoints thoroughly
 7. Optimize images and assets
 8. Use consistent code formatting
+
+# Rules

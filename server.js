@@ -24,6 +24,88 @@ async function ensureProfilesDir() {
   }
 }
 
+// Extract network path headers (proxies, CDNs, load balancers)
+function extractNetworkHeaders(req) {
+  const headers = {};
+
+  // Standard proxy headers
+  const proxyHeaders = [
+    'x-forwarded-for',
+    'x-forwarded-proto',
+    'x-forwarded-host',
+    'x-forwarded-port',
+    'x-real-ip',
+    'x-client-ip',
+    'true-client-ip',
+    'forwarded'
+  ];
+
+  // Cloudflare headers
+  const cloudflareHeaders = [
+    'cf-connecting-ip',
+    'cf-ipcountry',
+    'cf-ray',
+    'cf-visitor',
+    'cf-request-id',
+    'cf-connecting-ipv6'
+  ];
+
+  // Load balancer headers
+  const loadBalancerHeaders = [
+    'x-azure-clientip',
+    'x-azure-socketip',
+    'x-arr-log-id',
+    'x-arr-ssl'
+  ];
+
+  // CDN and cache headers
+  const cdnHeaders = [
+    'via',
+    'x-cdn',
+    'x-cache',
+    'x-cache-hits',
+    'x-served-by',
+    'x-timer',
+    'x-edge-location'
+  ];
+
+  // Other useful headers
+  const otherHeaders = [
+    'accept-encoding',
+    'accept-language',
+    'connection',
+    'host',
+    'referer',
+    'origin'
+  ];
+
+  // Combine all header names
+  const allHeaders = [
+    ...proxyHeaders,
+    ...cloudflareHeaders,
+    ...loadBalancerHeaders,
+    ...cdnHeaders,
+    ...otherHeaders
+  ];
+
+  // Extract each header if present
+  allHeaders.forEach(headerName => {
+    const value = req.get(headerName);
+    if (value) {
+      headers[headerName] = value;
+    }
+  });
+
+  // Also capture all headers starting with x- that we might have missed
+  Object.keys(req.headers).forEach(headerName => {
+    if (headerName.startsWith('x-') && !headers[headerName]) {
+      headers[headerName] = req.headers[headerName];
+    }
+  });
+
+  return headers;
+}
+
 // Generate unique reference ID
 // Format: XXXXX-XXXXX-XXXXX (5-letter groups, uppercase, no ambiguous chars)
 // Excludes: 0, O, I, 1, L (to avoid confusion)
@@ -92,12 +174,24 @@ app.post('/api/diagnostics', async (req, res) => {
     // Generate unique reference ID
     const referenceId = await generateUniqueReferenceId();
 
+    // Extract network path headers
+    const networkHeaders = extractNetworkHeaders(req);
+
+    // Determine the real client IP (considering proxies)
+    const realClientIp = req.get('cf-connecting-ip') ||
+                         req.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+                         req.get('x-real-ip') ||
+                         req.get('true-client-ip') ||
+                         req.ip ||
+                         req.connection.remoteAddress;
+
     // Add server-side metadata
     const dataToStore = {
       referenceId,
       submittedAt: new Date().toISOString(),
-      clientIp: req.ip || req.connection.remoteAddress,
+      clientIp: realClientIp,
       userAgent: req.get('user-agent'),
+      networkHeaders,
       diagnostics: diagnosticsData
     };
 
@@ -111,7 +205,26 @@ app.post('/api/diagnostics', async (req, res) => {
       'utf8'
     );
 
+    // Log diagnostics submission with network path information
     console.log(`Diagnostics saved: ${referenceId}`);
+    console.log(`  Client IP: ${realClientIp}`);
+
+    // Log proxy/CDN information if present
+    if (networkHeaders['cf-ray']) {
+      console.log(`  Cloudflare Ray ID: ${networkHeaders['cf-ray']}`);
+    }
+    if (networkHeaders['cf-ipcountry']) {
+      console.log(`  Country: ${networkHeaders['cf-ipcountry']}`);
+    }
+    if (networkHeaders['x-forwarded-for']) {
+      console.log(`  X-Forwarded-For: ${networkHeaders['x-forwarded-for']}`);
+    }
+    if (networkHeaders['via']) {
+      console.log(`  Via: ${networkHeaders['via']}`);
+    }
+
+    const capturedHeadersCount = Object.keys(networkHeaders).length;
+    console.log(`  Network headers captured: ${capturedHeadersCount}`);
 
     // Return reference ID to client
     res.json({
