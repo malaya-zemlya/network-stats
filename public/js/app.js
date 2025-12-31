@@ -1,6 +1,26 @@
 // Network Diagnostics Data Collection
 let diagnosticsData = {};
 
+// Load external resource with cache buster for timing diagnostics
+async function loadTestResource(url, resourceType = 'resource') {
+    const cacheBuster = Date.now();
+    const separator = url.includes('?') ? '&' : '?';
+    const resourceUrl = `${url}${separator}cb=${cacheBuster}`;
+
+    try {
+        const response = await fetch(resourceUrl);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        // We don't need to read the body, just making the request is enough
+        console.log(`External ${resourceType} fetched for timing diagnostics: ${url}`);
+        return resourceUrl;
+    } catch (err) {
+        console.warn(`External ${resourceType} fetch failed:`, err);
+        throw err;
+    }
+}
+
 // Utility Functions
 function formatBytes(bytes) {
     if (bytes === 0) return '0 Bytes';
@@ -129,7 +149,20 @@ function collectResourceTiming() {
 }
 
 // Collect All Diagnostics Data
-function collectAllDiagnostics() {
+async function collectAllDiagnostics() {
+    // Load external resources with cache buster for cross-origin timing diagnostics
+    try {
+        await Promise.all([
+            loadTestResource('https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxP.ttf', 'font'),
+            loadTestResource('https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js', 'script')
+        ]);
+    } catch (err) {
+        console.warn('Some external resources failed to load:', err);
+    }
+
+    // Wait a bit more to ensure timing data is available
+    await new Promise(resolve => setTimeout(resolve, 200));
+
     diagnosticsData = {
         timestamp: new Date().toISOString(),
         browser: collectBrowserInfo(),
@@ -251,10 +284,10 @@ function setupCollapsible() {
 }
 
 // Initialize on Page Load
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
     // Wait a bit for all resources to load
-    setTimeout(() => {
-        const data = collectAllDiagnostics();
+    setTimeout(async () => {
+        const data = await collectAllDiagnostics();
         displayDashboard(data);
         setupCollapsible();
 
