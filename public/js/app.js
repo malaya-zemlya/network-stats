@@ -44,6 +44,47 @@ function getFileName(url) {
     }
 }
 
+// Collect Locale Information
+function collectLocaleInfo() {
+    return {
+        primary: navigator.language,
+        available: navigator.languages || [navigator.language]
+    };
+}
+
+// Collect Timezone Information
+function collectTimezoneInfo() {
+    const offset = new Date().getTimezoneOffset();
+
+    try {
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+        return {
+            name: timeZone,
+            offset: offset,
+            offsetHours: -(offset / 60),
+            offsetString: formatTimezoneOffset(offset)
+        };
+    } catch (e) {
+        console.warn('Unable to get timezone info:', e);
+        return {
+            name: 'unknown',
+            offset: offset,
+            offsetHours: -(offset / 60),
+            offsetString: formatTimezoneOffset(offset)
+        };
+    }
+}
+
+// Format timezone offset as string (e.g., "+05:30" or "-08:00")
+function formatTimezoneOffset(offset) {
+    const sign = offset <= 0 ? '+' : '-';
+    const absOffset = Math.abs(offset);
+    const hours = Math.floor(absOffset / 60);
+    const minutes = absOffset % 60;
+    return `${sign}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
 // Collect Browser and Client Information
 function collectBrowserInfo() {
     const ua = navigator.userAgent;
@@ -71,7 +112,6 @@ function collectBrowserInfo() {
         screen: `${window.screen.width}x${window.screen.height}`,
         viewport: `${window.innerWidth}x${window.innerHeight}`,
         pixelRatio: window.devicePixelRatio,
-        language: navigator.language,
         cookiesEnabled: navigator.cookieEnabled,
         onlineStatus: navigator.onLine
     };
@@ -166,6 +206,8 @@ async function collectAllDiagnostics() {
     diagnosticsData = {
         timestamp: new Date().toISOString(),
         browser: collectBrowserInfo(),
+        locale: collectLocaleInfo(),
+        timezone: collectTimezoneInfo(),
         network: collectNetworkInfo(),
         navigation: collectNavigationTiming(),
         resources: collectResourceTiming(),
@@ -185,10 +227,15 @@ async function collectAllDiagnostics() {
 // Display Data in Dashboard
 function displayDashboard(data) {
     // Browser Info
-    document.getElementById('browser').textContent = `${data.browser.browser} (${data.browser.language})`;
+    document.getElementById('browser').textContent = data.browser.browser;
     document.getElementById('os').textContent = data.browser.os;
     document.getElementById('screen').textContent = data.browser.screen;
     document.getElementById('viewport').textContent = data.browser.viewport;
+
+    // Locale & Timezone Info
+    document.getElementById('language').textContent = `${data.locale.primary} (${data.locale.available.join(', ')})`;
+    document.getElementById('timezone').textContent = data.timezone.name;
+    document.getElementById('timezoneOffset').textContent = `${data.timezone.offsetString} (${data.timezone.offsetHours}h)`;
 
     // Network Info
     document.getElementById('connectionType').textContent = data.network.type;
