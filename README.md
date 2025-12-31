@@ -1,15 +1,26 @@
 # network_stats
 
-A simple interactive web application template built with Node.js and Express.
+A simple web app that collects browser/network diagnostic data and submits it to an Express server to generate a shareable reference ID (useful for customer support and debugging).
 
 ## Features
 
 - Express.js web server
 - Static file serving
-- RESTful API endpoints
-- Modern HTML5/CSS3/JavaScript
-- Responsive design
-- Interactive UI components
+- RESTful API endpoint to accept diagnostics and return a reference ID
+- Modern HTML5/CSS3/JavaScript dashboard UI
+- Theme switcher (Light, CyberPunk, Colorful)
+
+## Data Collected
+
+The app collects diagnostics **in the browser**. Some fields are **browser/permission dependent** and may show as “Not available”.
+
+- **Browser & device**: user agent-derived browser/OS, screen + viewport size, pixel ratio, cookie + online status.
+- **Locale & time**: language(s), timezone name + offset.
+- **Network**: connection type/effective type, downlink, RTT, save-data (when supported).
+- **Performance**: navigation timing metrics and resource timing entries (names, sizes, durations, protocol).
+- **GPU**: WebGL vendor/renderer/version (when supported).
+- **Memory**: JS heap statistics via `performance.memory` (Chromium-based browsers) and device RAM via `navigator.deviceMemory` (when supported).
+- **Storage**: quota/usage estimates and persistent-storage status via `navigator.storage` (when supported).
 
 ## Quick Start
 
