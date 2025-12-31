@@ -1,6 +1,42 @@
 // Network Diagnostics Data Collection
 let diagnosticsData = {};
 
+// Theme Management
+function initializeTheme() {
+    // Get saved theme from localStorage or default to 'light'
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
+    
+    // Set the select value
+    const themeSelect = document.getElementById('themeSelect');
+    if (themeSelect) {
+        themeSelect.value = savedTheme;
+    }
+}
+
+function setTheme(theme) {
+    // Validate theme
+    const validThemes = ['light', 'cyberpunk', 'colorful'];
+    if (!validThemes.includes(theme)) {
+        theme = 'light';
+    }
+    
+    // Set data-theme attribute on document root
+    document.documentElement.setAttribute('data-theme', theme);
+    
+    // Save to localStorage
+    localStorage.setItem('theme', theme);
+}
+
+function setupThemeSwitcher() {
+    const themeSelect = document.getElementById('themeSelect');
+    if (themeSelect) {
+        themeSelect.addEventListener('change', (e) => {
+            setTheme(e.target.value);
+        });
+    }
+}
+
 // Load external resource with cache buster for timing diagnostics
 async function loadTestResource(url, resourceType = 'resource') {
     const cacheBuster = Date.now();
@@ -438,6 +474,10 @@ function setupCollapsible() {
 
 // Initialize on Page Load
 window.addEventListener('load', async () => {
+    // Initialize theme first (before content loads to avoid flash)
+    initializeTheme();
+    setupThemeSwitcher();
+    
     // Wait a bit for all resources to load
     setTimeout(async () => {
         const data = await collectAllDiagnostics();
@@ -450,6 +490,13 @@ window.addEventListener('load', async () => {
         console.log('Network diagnostics collected:', data);
     }, 500);
 });
+
+// Initialize theme immediately (before DOMContentLoaded to prevent flash)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeTheme);
+} else {
+    initializeTheme();
+}
 
 // Initialize
 console.log('Network diagnostics dashboard initialized');

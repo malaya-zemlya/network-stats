@@ -9,10 +9,22 @@
 <body>
     <div class="container">
         <header>
-            <h1>Network Diagnostics Dashboard</h1>
-            <p style="font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.9;">
-                Review your network data before submitting
-            </p>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <h1>Network Diagnostics Dashboard</h1>
+                    <p style="font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.9;">
+                        Review your network data before submitting
+                    </p>
+                </div>
+                <div class="theme-switcher">
+                    <label for="themeSelect" style="margin-right: 0.5rem; font-size: 0.9rem;">Theme:</label>
+                    <select id="themeSelect" class="theme-select">
+                        <option value="light">Light</option>
+                        <option value="cyberpunk">CyberPunk</option>
+                        <option value="colorful">Colorful</option>
+                    </select>
+                </div>
+            </div>
         </header>
 
         <main>
