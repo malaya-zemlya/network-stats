@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Diagnostics Dashboard</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Network Diagnostics Dashboard</h1>
+            <p style="font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.9;">
+                Review your network data before submitting
+            </p>
+        </header>
+
+        <main>
+            <!-- Loading State -->
+            <div id="loadingState" class="loading">
+                Collecting network diagnostics data
+            </div>
+
+            <!-- Dashboard Content (hidden until data is collected) -->
+            <div id="dashboardContent" style="display: none;">
+
+                <!-- Browser & Client Information -->
+                <section class="card dashboard-section">
+                    <h3>Browser & Client Information</h3>
+                    <div class="data-grid">
+                        <div class="data-item">
+                            <label>Browser</label>
+                            <div class="value" id="browser">-</div>
+                        </div>
+                        <div class="data-item">
+                            <label>OS</label>
+                            <div class="value" id="os">-</div>
+                        </div>
+                        <div class="data-item">
+                            <label>Screen Resolution</label>
+                            <div class="value" id="screen">-</div>
+                        </div>
+                        <div class="data-item">
+                            <label>Viewport Size</label>
+                            <div class="value" id="viewport">-</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Network Connection -->
+                <section class="card dashboard-section">
+                    <h3>Network Connection</h3>
+                    <div class="data-grid">
+                        <div class="data-item">
+                            <label>Connection Type</label>
+                            <div class="value" id="connectionType">-</div>
+                        </div>
+                        <div class="data-item">
+                            <label>Effective Type</label>
+                            <div class="value" id="effectiveType">-</div>
+                        </div>
+                        <div class="data-item">
+                            <label>Downlink (Mbps)</label>
+                            <div class="value" id="downlink">-</div>
+                        </div>
+                        <div class="data-item">
+                            <label>RTT (ms)</label>
+                            <div class="value" id="rtt">-</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Navigation Timing -->
+                <section class="card dashboard-section">
+                    <h3>Page Load Performance</h3>
+                    <div class="data-grid">
+                        <div class="data-item">
+                            <label>DNS Lookup</label>
+                            <div class="value" id="dnsTime">-</div>
+                        </div>
+                        <div class="data-item">
+                            <label>TCP Connection</label>
+                            <div class="value" id="tcpTime">-</div>
+                        </div>
+                        <div class="data-item">
+                            <label>TLS Handshake</label>
+                            <div class="value" id="tlsTime">-</div>
+                        </div>
+                        <div class="data-item">
+                            <label>Time to First Byte</label>
+                            <div class="value" id="ttfb">-</div>
+                        </div>
+                        <div class="data-item">
+                            <label>DOM Load Time</label>
+                            <div class="value" id="domLoad">-</div>
+                        </div>
+                        <div class="data-item">
+                            <label>Page Load Time</label>
+                            <div class="value" id="pageLoad">-</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Resources Table -->
+                <section class="card dashboard-section">
+                    <h3 class="collapsible-header" id="resourcesHeader">
+                        Loaded Resources
+                    </h3>
+                    <div class="collapsible-content" id="resourcesContent">
+                        <div style="overflow-x: auto;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Type</th>
+                                        <th>Size</th>
+                                        <th>Duration</th>
+                                        <th>Protocol</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resourcesTable">
+                                    <tr>
+                                        <td colspan="5" style="text-align: center;">Loading...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Submit Section -->
+                <section class="card">
+                    <h3>Submit Diagnostics</h3>
+                    <p>If you're experiencing issues and would like to share this diagnostic data with customer support, click the button below. A unique reference ID will be generated for your submission.</p>
+                    <button id="submitBtn" class="btn btn-submit">Send Diagnostics to Support</button>
+
+                    <div id="statusMessage" style="display: none;"></div>
+                </section>
+
+                <!-- Reference ID Display (hidden until submitted) -->
+                <div id="referenceIdSection" style="display: none;" class="reference-id">
+                    <h3>Your Reference ID</h3>
+                    <div class="id-value" id="referenceIdValue">-</div>
+                    <p class="id-note">Please provide this ID when contacting customer support</p>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Network Diagnostics. Your privacy is important to us.</p>
+        </footer>
+    </div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
