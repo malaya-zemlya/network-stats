@@ -141,6 +141,45 @@ function collectNetworkInfo() {
     };
 }
 
+// Collect GPU Information
+function collectGPUInfo() {
+    try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+
+        if (!gl) {
+            return {
+                vendor: 'not available',
+                renderer: 'not available',
+                webglVersion: 'not supported'
+            };
+        }
+
+        const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+
+        if (debugInfo) {
+            return {
+                vendor: gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || 'unknown',
+                renderer: gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || 'unknown',
+                webglVersion: gl.getParameter(gl.VERSION) || 'unknown'
+            };
+        } else {
+            return {
+                vendor: gl.getParameter(gl.VENDOR) || 'unknown',
+                renderer: gl.getParameter(gl.RENDERER) || 'unknown',
+                webglVersion: gl.getParameter(gl.VERSION) || 'unknown'
+            };
+        }
+    } catch (e) {
+        console.warn('Unable to get GPU info:', e);
+        return {
+            vendor: 'error',
+            renderer: 'error',
+            webglVersion: 'error'
+        };
+    }
+}
+
 // Collect Navigation Timing
 function collectNavigationTiming() {
     const timing = performance.timing;
@@ -208,6 +247,7 @@ async function collectAllDiagnostics() {
         browser: collectBrowserInfo(),
         locale: collectLocaleInfo(),
         timezone: collectTimezoneInfo(),
+        gpu: collectGPUInfo(),
         network: collectNetworkInfo(),
         navigation: collectNavigationTiming(),
         resources: collectResourceTiming(),
@@ -236,6 +276,11 @@ function displayDashboard(data) {
     document.getElementById('language').textContent = `${data.locale.primary} (${data.locale.available.join(', ')})`;
     document.getElementById('timezone').textContent = data.timezone.name;
     document.getElementById('timezoneOffset').textContent = `${data.timezone.offsetString} (${data.timezone.offsetHours}h)`;
+
+    // GPU Info
+    document.getElementById('gpuVendor').textContent = data.gpu.vendor;
+    document.getElementById('gpuRenderer').textContent = data.gpu.renderer;
+    document.getElementById('webglVersion').textContent = data.gpu.webglVersion;
 
     // Network Info
     document.getElementById('connectionType').textContent = data.network.type;
