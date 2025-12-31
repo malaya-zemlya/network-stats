@@ -60,10 +60,27 @@ async function loadTestResource(url, resourceType = 'resource') {
 // Utility Functions
 function formatBytes(bytes) {
     if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+    if (bytes < 0) return 'Invalid';
+    
+    const KB = 1024;
+    const MB = KB * 1024;
+    const GB = MB * 1024;
+    const TB = GB * 1024;
+    const PB = TB * 1024;
+    
+    if (bytes < KB) {
+        return bytes + ' Bytes';
+    } else if (bytes < MB) {
+        return (bytes / KB).toFixed(2) + ' KB';
+    } else if (bytes < GB) {
+        return (bytes / MB).toFixed(2) + ' MB';
+    } else if (bytes < TB) {
+        return (bytes / GB).toFixed(2) + ' GB';
+    } else if (bytes < PB) {
+        return (bytes / TB).toFixed(2) + ' TB';
+    } else {
+        return (bytes / PB).toFixed(2) + ' PB';
+    }
 }
 
 function formatTime(ms) {
@@ -280,6 +297,44 @@ function collectMemoryInfo() {
     return memoryInfo;
 }
 
+// Collect Storage Information
+async function collectStorageInfo() {
+    const storageInfo = {
+        available: false,
+        quota: null,
+        usage: null,
+        usageDetails: null,
+        persisted: null
+    };
+
+    try {
+        if (!navigator.storage || typeof navigator.storage.estimate !== 'function') {
+            storageInfo.reason = 'Storage API not supported';
+            return storageInfo;
+        }
+
+        storageInfo.available = true;
+
+        // Get storage estimate
+        const estimate = await navigator.storage.estimate();
+        storageInfo.quota = estimate.quota !== undefined ? estimate.quota : null;
+        storageInfo.usage = estimate.usage !== undefined ? estimate.usage : null;
+        storageInfo.usageDetails = estimate.usageDetails || null;
+
+        // Check if storage is persisted
+        if (typeof navigator.storage.persisted === 'function') {
+            storageInfo.persisted = await navigator.storage.persisted();
+        }
+
+    } catch (e) {
+        console.warn('Unable to get storage info:', e);
+        storageInfo.available = false;
+        storageInfo.reason = `Error: ${e.message}`;
+    }
+
+    return storageInfo;
+}
+
 // Collect Navigation Timing
 function collectNavigationTiming() {
     const timing = performance.timing;
@@ -342,8 +397,9 @@ async function collectAllDiagnostics() {
     // Wait a bit more to ensure timing data is available
     await new Promise(resolve => setTimeout(resolve, 200));
 
-    // Collect high entropy data (async)
+    // Collect async data
     const highEntropyData = await collectHighEntropyData();
+    const storageData = await collectStorageInfo();
 
     diagnosticsData = {
         timestamp: new Date().toISOString(),
@@ -352,6 +408,7 @@ async function collectAllDiagnostics() {
         timezone: collectTimezoneInfo(),
         gpu: collectGPUInfo(),
         memory: collectMemoryInfo(),
+        storage: storageData,
         highEntropy: highEntropyData,
         network: collectNetworkInfo(),
         navigation: collectNavigationTiming(),
@@ -393,6 +450,32 @@ function displayDashboard(data) {
         document.getElementById('jsHeapUsed').textContent = 'Not available';
         document.getElementById('jsHeapTotal').textContent = 'Not available';
         document.getElementById('jsHeapLimit').textContent = 'Not available';
+    }
+
+    // Storage Info
+    if (data.storage && data.storage.available) {
+        document.getElementById('storageQuota').textContent = data.storage.quota !== null 
+            ? formatBytes(data.storage.quota) 
+            : 'Not available';
+        document.getElementById('storageUsage').textContent = data.storage.usage !== null 
+            ? formatBytes(data.storage.usage) 
+            : 'Not available';
+        if (data.storage.quota !== null && data.storage.usage !== null) {
+            const percent = ((data.storage.usage / data.storage.quota) * 100).toFixed(2);
+            document.getElementById('storagePercent').textContent = `${percent}%`;
+        } else {
+            document.getElementById('storagePercent').textContent = 'Not available';
+        }
+        document.getElementById('storagePersisted').textContent = data.storage.persisted === true 
+            ? 'Yes' 
+            : data.storage.persisted === false 
+                ? 'No' 
+                : 'Not available';
+    } else {
+        document.getElementById('storageQuota').textContent = 'Not available';
+        document.getElementById('storageUsage').textContent = 'Not available';
+        document.getElementById('storagePercent').textContent = 'Not available';
+        document.getElementById('storagePersisted').textContent = 'Not available';
     }
 
     // User-Agent Client Hints
